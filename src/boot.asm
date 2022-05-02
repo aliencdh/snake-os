@@ -55,20 +55,57 @@ jmp $
 ; DEFINITIONS ;
 ;;;;;;;;;;;;;;;
 incorrect_num_sectors:
-    mov ah, 0x0e
-    int 0x10
-    mov bx, msg
-    jmp print_str
+    mov bh, msg
+    mov [print_str_in], bh
+    call print_str_start
+
+    mov [num_sectors], al
+    mov bh, num_sectors
+    mov [digit_to_hex_in], bh
+    call digit_to_hex
+
+    mov bh, digit_to_hex_out
+    mov [print_str_in], bh
+    call print_str_start
+
+    jmp exit
 
 msg: db "Incorrect number of sectors were loaded.", 0
+num_sectors: db 0
 
-print_str:
+print_str_start:
+    mov ah, 0x0e
+    mov bx, print_str_in
+    jmp print_str_loop
+
+print_str_loop:
     mov al, [bx]
     cmp al, 0
-    je exit
+    je print_str_ret
     int 0x10
     inc bx
-    jmp print_str
+    jmp print_str_loop
+
+print_str_ret:
+    ret
+
+print_str_in: db 0 ; ptr to the input string
+
+digit_to_hex:
+    mov ah, [digit_to_hex_in]
+    cmp ah, 9
+    jle digit_to_hex_lower
+    add ah, 65
+    mov [digit_to_hex_out], ah
+    ret
+
+digit_to_hex_lower:
+    add ah, 48
+    mov [digit_to_hex_out], ah
+    ret
+
+digit_to_hex_in: db 0
+digit_to_hex_out: db 0
 
 exit: jmp $
 
