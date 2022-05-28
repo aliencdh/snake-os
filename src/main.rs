@@ -1,6 +1,12 @@
 #![no_std]
 #![no_main]
+
+#[macro_use]
+extern crate lazy_static;
+
 use core::panic::PanicInfo;
+
+mod vga_buffer;
 
 static MSG: &[u8] = b"Hello World!";
 
@@ -11,14 +17,7 @@ fn panic(_info: &PanicInfo) -> ! {
 
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
-    let vga_buffer = 0xb8000 as *mut u8;
-
-    for (i, &byte) in MSG.iter().enumerate() {
-        unsafe {
-            *vga_buffer.offset(i as isize * 2) = byte;
-            *vga_buffer.offset(i as isize * 2 + 1) = 0x0f;
-        }
-    }
+    println!("Hello world{}", "!");
 
     loop {}
 }
