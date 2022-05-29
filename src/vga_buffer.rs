@@ -13,10 +13,27 @@ macro_rules! println {
     ($($arg:tt)*) => ($crate::print!("{}\n", format_args!($($arg)*)));
 }
 
+#[macro_export]
+macro_rules! eprint {
+    ($($arg:tt)*) => ($crate::vga_buffer::_err_print(format_args!($($arg)*)));
+}
+
+#[macro_export]
+macro_rules! eprintln {
+    () => ($crate::eprint!("\n"));
+    ($($arg:tt)*) => ($crate::eprint!("{}\n", format_args!($($arg)*)));
+}
+
 #[doc(hidden)]
 pub fn _print(args: fmt::Arguments) {
     use core::fmt::Write;
     WRITER.lock().write_fmt(args).unwrap();
+}
+
+#[doc(hidden)]
+pub fn _err_print(args: fmt::Arguments) {
+    use core::fmt::Write;
+    ERR_WRITER.lock().write_fmt(args).unwrap();
 }
 
 lazy_static! {
@@ -26,6 +43,15 @@ lazy_static! {
         buf: unsafe { &mut *(0xb8000 as *mut Buffer) },
     });
 }
+
+lazy_static! {
+    pub static ref ERR_WRITER: Mutex<Writer> = Mutex::new(Writer {
+        column_position: 0,
+        color_code: ColorCode::new(Color::LightRed, Color::Black),
+        buf: unsafe { &mut *(0xb8000 as *mut Buffer) },
+    });
+}
+
 
 pub struct Writer {
     column_position: usize,
@@ -135,4 +161,26 @@ const BUF_WIDTH: usize = 80;
 #[repr(transparent)]
 struct Buffer {
     chars: [[Volatile<ScreenChar>; BUF_WIDTH]; BUF_HEIGHT],
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test_case]
+    fn test_println_many() {
+        for _ in 0..500 {
+            println!("test_println_many");
+        }
+    }
+
+    #[test_case]
+    fn test_println_out() {
+        let input = "test_println_out";
+        println!("{}", input);
+        for (i, c) in input.chars().enumerate() {
+            let result_char = WRITER.lock().buf.chars[BUF_HEIGHT - 2][i].read();
+            assert_eq!(result_char.ascii_char as char, c);
+        }
+    }
 }
