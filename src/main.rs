@@ -8,15 +8,20 @@
 #[macro_use]
 extern crate lazy_static;
 
+extern crate alloc;
+
 use core::panic::PanicInfo;
 
 mod vga_buffer;
 mod serial;
+mod snake;
 
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
     #[cfg(test)]
     test_main();
+
+    snake::Game::new().run();
 
     loop {}
 }
@@ -39,22 +44,21 @@ pub fn exit_qemu(exit_code: QemuExitCode) {
 
 #[cfg(not(test))]
 #[panic_handler]
-fn panic(info: &PanicInfo) -> ! {
+pub fn panic(info: &PanicInfo) -> ! {
     println!("{}", info);
     loop {}
 }
 
 #[cfg(test)]
 #[panic_handler]
-fn panic(info: &PanicInfo) -> ! {
+pub fn panic(info: &PanicInfo) -> ! {
     serial_println!("[failed]");
     serial_println!("Error: {}", info);
     exit_qemu(QemuExitCode::Failed);
     loop {}
 }
 
-#[cfg(test)]
-fn test_runner(tests: &[&dyn Test]) {
+pub fn test_runner(tests: &[&dyn Test]) {
     serial_println!("Running {} tests", tests.len());
     for test in tests {
         test.run();

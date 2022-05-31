@@ -52,6 +52,26 @@ lazy_static! {
     });
 }
 
+pub fn render_1ch_red(pos: (usize, usize)) {
+    const RENDER_CHAR: ScreenChar = ScreenChar {
+        ascii_char: 0xfe,
+        color_code: ColorCode::new(Color::LightRed, Color::LightRed),
+    };
+
+    let (width, height) = clamp_to_buf(pos);
+
+}
+
+pub fn clamp_to_buf(pos: (usize, usize)) -> (usize, usize) {
+    (
+        if pos.0 >= BUF_WIDTH { BUF_WIDTH - 1 }
+        else if pos.0 < 0 { 0 }
+        else { pos.0 },
+        if pos.1 >= BUF_HEIGHT { BUF_HEIGHT - 1 }
+        else if pos.1 < 0 { 0 }
+        else { pos.1 }
+    )
+}
 
 pub struct Writer {
     column_position: usize,
